@@ -305,16 +305,31 @@ LIMIT 15;
 
 # Top 15 Subcategories with the lowest total sales and total profits in each region
 
-SELECT 
+WITH SubCategory_Sales_Profits AS (
+    SELECT
+        Region,
+        SubCategory,
+        SUM(Sales) AS Total_Sales,
+        SUM(Profit) AS Total_Profit,
+        ROW_NUMBER() OVER (PARTITION BY Region ORDER BY SUM(Sales) ASC) AS Sales_Rank,
+        ROW_NUMBER() OVER (PARTITION BY Region ORDER BY SUM(Profit) ASC) AS Profit_Rank
+    FROM
+        orders
+    GROUP BY Region, SubCategory
+)
+SELECT
     Region,
     SubCategory,
-    SUM(Sales) AS Total_Sales,
-    SUM(Profit) AS Total_Profit
+    Total_Sales,
+    Total_Profit,
+    Sales_Rank,
+    Profit_Rank
 FROM
-    orders
-GROUP BY Region, SubCategory
-ORDER BY Total_Sales ASC, Total_Profit ASC
-LIMIT 15;
+    SubCategory_Sales_Profits
+WHERE
+    Sales_Rank <= 15 OR Profit_Rank <= 15
+ORDER BY
+    Region, Sales_Rank, Profit_Rank;
 
 # Top 15 Highest total sales and profits per Subcategory in each state
 
@@ -422,16 +437,31 @@ LIMIT 15;
 
 # Top 15 customers that generated the most sales compared to total profits
 
-SELECT 
+WITH Customer_Sales_Profits AS (
+    SELECT
+        CustomerID,
+        CustomerName,
+        SUM(Sales) AS Total_Sales,
+        SUM(Profit) AS Total_Profit,
+        ROW_NUMBER() OVER (ORDER BY SUM(Sales) DESC) AS Sales_Rank,
+        ROW_NUMBER() OVER (ORDER BY SUM(Profit) DESC) AS Profit_Rank
+    FROM
+        orders
+    GROUP BY CustomerID, CustomerName
+)
+SELECT
     CustomerID,
     CustomerName,
-    SUM(Sales) AS Total_Sales,
-    SUM(Profit) AS Total_Profit
+    Total_Sales,
+    Total_Profit,
+    Sales_Rank,
+    Profit_Rank
 FROM
-    orders
-GROUP BY CustomerID , CustomerName
-ORDER BY Total_Sales DESC, Total_Profit DESC
-LIMIT 15;
+    Customer_Sales_Profits
+WHERE
+    Sales_Rank <= 15 OR Profit_Rank <= 15
+ORDER BY
+    Sales_Rank, Profit_Rank;
 
 # Average shipping time per class 
 
